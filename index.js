@@ -1,26 +1,37 @@
+// Seleção do nosso elemento HTML em nosso arquivo JS
 const canvas = document.querySelector("canvas");
 
-const c = canvas.getContext("2d");
+// Seleção do contexto do canvas, nos permitindo usar suas funções de desenho ("2d" porque será um jogo 2D)
+const contexto = canvas.getContext("2d");
 
 const pontuacaoEl = document.querySelector("#pontuacaoEl");
+const statusEl = document.getElementById("statusEl");
 
+// Setando a altura/largura do canvas para ser a mesma que a da tela
 canvas.width = innerWidth;
 canvas.height = innerHeight;
+
+const corBarreira = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
 
 // CLASSES =================================================================
 
 class Barreira {
   static largura = 40;
   static altura = 40;
-  constructor({ posicao, imagem }) {
+  constructor({ posicao }) {
     this.posicao = posicao;
     this.largura = 40;
     this.altura = 40;
-    this.imagem = imagem;
   }
 
   criar() {
-    c.drawImage(this.imagem, this.posicao.x, this.posicao.y);
+    contexto.fillStyle = corBarreira;
+    contexto.fillRect(
+      this.posicao.x,
+      this.posicao.y,
+      this.largura,
+      this.altura
+    );
   }
 }
 
@@ -36,23 +47,23 @@ class Jogador {
   }
 
   criar() {
-    c.save();
-    c.translate(this.posicao.x, this.posicao.y);
-    c.rotate(this.rotacao);
-    c.translate(-this.posicao.x, -this.posicao.y);
-    c.beginPath();
-    c.arc(
+    contexto.save();
+    contexto.translate(this.posicao.x, this.posicao.y);
+    contexto.rotate(this.rotacao);
+    contexto.translate(-this.posicao.x, -this.posicao.y);
+    contexto.beginPath();
+    contexto.arc(
       this.posicao.x,
       this.posicao.y,
       this.raio,
       this.radians,
       Math.PI * 2 - this.radians
     );
-    c.lineTo(this.posicao.x, this.posicao.y);
-    c.fillStyle = "yellow";
-    c.fill();
-    c.closePath();
-    c.restore();
+    contexto.lineTo(this.posicao.x, this.posicao.y);
+    contexto.fillStyle = "yellow";
+    contexto.fill();
+    contexto.closePath();
+    contexto.restore();
   }
 
   movimentar() {
@@ -70,7 +81,7 @@ class Jogador {
 
 class Inimigo {
   static rapidez = 2;
-  constructor({ posicao, velocidade, cor = "red" }) {
+  constructor({ posicao, velocidade, cor }) {
     this.posicao = posicao;
     this.velocidade = velocidade;
     this.raio = 15;
@@ -81,11 +92,11 @@ class Inimigo {
   }
 
   criar() {
-    c.beginPath();
-    c.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
-    c.fillStyle = this.assustado ? "blue" : this.cor;
-    c.fill();
-    c.closePath();
+    contexto.beginPath();
+    contexto.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
+    contexto.fillStyle = this.assustado ? "blue" : this.cor;
+    contexto.fill();
+    contexto.closePath();
   }
 
   movimentar() {
@@ -102,26 +113,26 @@ class Ponto {
   }
 
   criar() {
-    c.beginPath();
-    c.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
-    c.fillStyle = "white";
-    c.fill();
-    c.closePath();
+    contexto.beginPath();
+    contexto.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
+    contexto.fillStyle = "white";
+    contexto.fill();
+    contexto.closePath();
   }
 }
 
 class PowerUp {
   constructor({ posicao }) {
     this.posicao = posicao;
-    this.raio = 8;
+    this.raio = 9;
   }
 
   criar() {
-    c.beginPath();
-    c.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
-    c.fillStyle = "white";
-    c.fill();
-    c.closePath();
+    contexto.beginPath();
+    contexto.arc(this.posicao.x, this.posicao.y, this.raio, 0, Math.PI * 2);
+    contexto.fillStyle = "white";
+    contexto.fill();
+    contexto.closePath();
   }
 }
 
@@ -150,7 +161,7 @@ const pontos = [];
 
 const inimigos = [];
 
-for (let i = 4; 0 <= i; i--) {
+for (let i = 2; 0 <= i; i--) {
   inimigos.push(
     new Inimigo({
       posicao: {
@@ -166,30 +177,6 @@ for (let i = 4; 0 <= i; i--) {
   );
 }
 
-// const inimigos = [
-//   new Inimigo({
-//     posicao: {
-//       x: Barreira.largura * 6 + Barreira.largura / 2,
-//       y: Barreira.altura + Barreira.altura / 2,
-//     },
-//     velocidade: {
-//       x: Inimigo.rapidez,
-//       y: 0,
-//     },
-//   }),
-//   new Inimigo({
-//     posicao: {
-//       x: Barreira.largura * 6 + Barreira.largura / 2,
-//       y: Barreira.altura + Barreira.altura / 2,
-//     },
-//     velocidade: {
-//       x: Inimigo.rapidez,
-//       y: 0,
-//     },
-//     cor: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-//   }),
-// ];
-
 const jogador = new Jogador({
   posicao: {
     x: Barreira.largura + Barreira.largura / 2,
@@ -203,29 +190,23 @@ let ultimaTeclaPressionada = "";
 let pontuacao = 0;
 
 const mapa = [
-  ["1", "-", "-", "-", "-", "-", "-", "-", "-", "-", "2"],
-  ["|", " ", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "7", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
-  ["|", ".", "[", "]", ".", ".", ".", "[", "]", ".", "|"],
-  ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "+", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
-  ["|", ".", "[", "]", ".", "p", ".", "[", "]", ".", "|"],
-  ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "5", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
-  ["4", "-", "-", "-", "-", "-", "-", "-", "-", "-", "3"],
+  ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
+  ["-", " ", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "-"],
+  ["-", ".", "-", "-", ".", "-", "-", ".", "-", "-", ".", "-", "-", ".", "-"],
+  ["-", ".", ".", ".", ".", "-", ".", ".", ".", "-", ".", ".", ".", ".", "-"],
+  ["-", ".", "-", ".", ".", ".", ".", "-", ".", ".", ".", ".", "-", ".", "-"],
+  ["-", ".", "-", ".", "-", ".", "-", "-", "-", ".", "-", ".", "-", ".", "-"],
+  ["-", ".", ".", ".", "-", ".", ".", "p", ".", ".", "-", ".", ".", ".", "-"],
+  ["-", ".", "-", ".", "-", ".", "-", "-", "-", ".", "-", ".", "-", ".", "-"],
+  ["-", ".", "-", ".", ".", ".", ".", "-", ".", ".", ".", ".", "-", ".", "-"],
+  ["-", ".", ".", ".", ".", "-", ".", ".", ".", "-", ".", ".", ".", ".", "-"],
+  ["-", ".", "-", "-", ".", "-", "-", ".", "-", "-", ".", "-", "-", ".", "-"],
+  ["-", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", ".", "-"],
+  ["-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-", "-"],
 ];
 
 // FUNÇÕES =================================================================
 
-function criarImagem(nome) {
-  const imagem = new Image();
-  imagem.src = `./img/${nome}.png`;
-
-  return imagem;
-}
 mapa.forEach((linha, i) => {
   linha.forEach((caractere, j) => {
     switch (caractere) {
@@ -236,172 +217,6 @@ mapa.forEach((linha, i) => {
               x: Barreira.largura * j,
               y: Barreira.altura * i,
             },
-            imagem: criarImagem("pipeHorizontal"),
-          })
-        );
-        break;
-      case "|":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("pipeVertical"),
-          })
-        );
-        break;
-      case "1":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("pipeCorner1"),
-          })
-        );
-        break;
-      case "2":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("pipeCorner2"),
-          })
-        );
-        break;
-      case "3":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("pipeCorner3"),
-          })
-        );
-        break;
-      case "4":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("pipeCorner4"),
-          })
-        );
-        break;
-      case "b":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: Barreira.largura * j,
-              y: Barreira.altura * i,
-            },
-            imagem: criarImagem("block"),
-          })
-        );
-        break;
-      case "[":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("capLeft"),
-          })
-        );
-        break;
-      case "]":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("capRight"),
-          })
-        );
-        break;
-      case "_":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("capBottom"),
-          })
-        );
-        break;
-      case "^":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("capTop"),
-          })
-        );
-        break;
-      case "+":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("pipeCross"),
-          })
-        );
-        break;
-      case "5":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("pipeConnectorTop"),
-          })
-        );
-        break;
-      case "6":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("pipeConnectorRight"),
-          })
-        );
-        break;
-      case "7":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("pipeConnectorBottom"),
-          })
-        );
-        break;
-      case "8":
-        barreiras.push(
-          new Barreira({
-            posicao: {
-              x: j * Barreira.largura,
-              y: i * Barreira.altura,
-            },
-            imagem: criarImagem("pipeConnectorLeft"),
           })
         );
         break;
@@ -447,7 +262,7 @@ let animacaoId;
 
 function animar() {
   animacaoId = requestAnimationFrame(animar);
-  c.clearRect(0, 0, canvas.width, canvas.height);
+  contexto.clearRect(0, 0, canvas.width, canvas.height);
 
   if (teclas.w.pressionado && ultimaTeclaPressionada === "w") {
     for (const element of barreiras) {
@@ -547,14 +362,16 @@ function animar() {
         inimigos.splice(i, 1);
       } else {
         cancelAnimationFrame(animacaoId);
-        console.log("Perdeu");
+        statusEl.innerHTML = "VOCÊ PERDEU";
+        statusEl.style.color = "red";
       }
     }
   }
 
   if (pontos.length === 0) {
     cancelAnimationFrame(animacaoId);
-    console.log("Ganhou");
+    statusEl.innerHTML = "VOCÊ VENCEU";
+    statusEl.style.color = "green";
   }
 
   for (let i = powerUps.length - 1; 0 <= i; i--) {
